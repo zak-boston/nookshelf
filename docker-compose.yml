@@ -1,0 +1,9 @@
+services:
+  nookshelf:
+    build: .
+    container_name: nookshelf
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data:/data        # nookshelf.json lives here
+    restart: unless-stopped

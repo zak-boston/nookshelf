@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛖 NookShelf</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍵</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --wall:       #2a1f14;
+    --wall2:      #1e1509;
+    --wallpaper:  #3d2b18;
+    --floor:      #5c3d1e;
+    --floor2:     #7a5228;
+    --wood:       #8b5e2a;
+    --wood2:      #6b4418;
+    --wood-light: #c4894a;
+    --amber:      #f5a623;
+    --amber2:     #e8891a;
+    --amber-dim:  #8a4f0e;
+    --cream:      #fdf3e3;
+    --cream2:     #f5e6c8;
+    --parchment:  #ede0c4;
+    --text:       #2e1f0e;
+    --text2:      #5c3d1e;
+    --text3:      #9a7040;
+    --text-light: #f5e6c8;
+    --text-dim:   #c4a070;
+    --fire-a:     #ff6b1a;
+    --fire-b:     #ff9a00;
+    --fire-c:     #ffcc44;
+    --ember:      #ff4400;
+    --shadow:     rgba(0,0,0,0.35);
+    --shadow2:    rgba(0,0,0,0.55);
+    --border:     #8b5e2a;
+    --border2:    #6b4418;
+    --red:        #c04040;
+    --red-bg:     rgba(192,64,64,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    background: var(--wall2);
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  .room { position: fixed; inset: 0; z-index: -1; display: flex; flex-direction: column; }
+
+  .wall-bg {
+    flex: 1; background: var(--wallpaper); position: relative; overflow: hidden;
+  }
+  .wall-bg::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 10px 10px, rgba(180,120,50,.08) 1px, transparent 1px),
+      radial-gradient(circle at 30px 30px, rgba(180,120,50,.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .wall-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 15% 100%, rgba(255,140,20,.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 50% 100%, rgba(255,100,10,.08) 0%, transparent 60%),
+      radial-gradient(ellipse 30% 50% at 85% 30%,  rgba(255,200,80,.06) 0%, transparent 60%);
+    animation: flickerglow 4s ease-in-out infinite alternate;
+  }
+  @keyframes flickerglow { 0%{opacity:.9} 30%{opacity:1} 60%{opacity:.85} 100%{opacity:1} }
+
+  .floor-bg {
+    height: 90px;
+    background: repeating-linear-gradient(90deg,
+      #5c3d1e 0px, #5c3d1e 60px, #6b4820 60px, #6b4820 62px,
+      #7a5228 62px, #7a5228 120px, #6b4820 120px, #6b4820 122px);
+    border-top: 4px solid #3d2510;
+    position: relative;
+    box-shadow: inset 0 8px 24px rgba(0,0,0,.4);
+  }
+  .floor-bg::before {
+    content: ''; position: absolute; top:0; left:0; right:0; height:30px;
+    background: linear-gradient(180deg, rgba(255,180,80,.07) 0%, transparent 100%);
+  }
+  .wall-trim {
+    height: 16px;
+    background: linear-gradient(180deg, #8b5e2a 0%, #6b4418 100%);
+    border-top: 2px solid #c4894a; border-bottom: 2px solid #3d2510;
+  }
+
+  /* ── Stone arch fireplace ── */
+  /* The whole fireplace is an SVG so we get full control over the arch shape */
+  .fireplace {
+    position: fixed; bottom: 90px; left: -10px;
+    width: 260px; z-index: 1;
+  }
+
+  /* Fire box — sits behind the SVG arch overlay */
+  .firebox {
+    position: absolute;
+    bottom: 18px; left: 50%; transform: translateX(-50%);
+    width: 160px; height: 130px;
+    background: linear-gradient(180deg, #1a0800 0%, #2e1005 40%, #1a0800 100%);
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+  }
+
+  /* Orange glow on back wall of firebox */
+  .firebox::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 90% 60% at 50% 100%,
+      rgba(255,100,10,.95) 0%, rgba(255,60,0,.7) 35%, transparent 65%);
+    animation: fireglow 2s ease-in-out infinite alternate;
+  }
+  @keyframes fireglow { 0%{opacity:.8;transform:scaleX(1)} 50%{opacity:1;transform:scaleX(1.06)} 100%{opacity:.85;transform:scaleX(.96)} }
+
+  .flames {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 4px; align-items: flex-end; z-index: 1;
+  }
+  .flame { border-radius: 50% 50% 20% 20%; animation: flicker 1.5s ease-in-out infinite alternate; transform-origin: bottom center; }
+  .flame-a { width:28px; height:64px; background:linear-gradient(0deg,#ff6b1a,#ff9a00 50%,#ffcc44); animation-delay:.2s; }
+  .flame-b { width:22px; height:50px; background:linear-gradient(0deg,#ff6b1a,#ff9a00 40%,#ffcc44); animation-delay:.0s; }
+  .flame-c { width:18px; height:40px; background:linear-gradient(0deg,#ff4400,#ff6b1a 50%,#ff9a00); animation-delay:.4s; }
+  .flame-d { width:24px; height:56px; background:linear-gradient(0deg,#ff6b1a,#ff9a00 60%,#ffcc44); animation-delay:.1s; }
+  .flame-e { width:16px; height:34px; background:linear-gradient(0deg,#ff4400,#ff6b1a 60%,#ff9a00); animation-delay:.3s; }
+  @keyframes flicker {
+    0%  {transform:scaleX(1)   scaleY(1)    rotate(-2deg)}
+    30% {transform:scaleX(1.08)scaleY(.95)  rotate(1deg)}
+    60% {transform:scaleX(.94) scaleY(1.06) rotate(-1deg)}
+    100%{transform:scaleX(1.04)scaleY(.98)  rotate(2deg)}
+  }
+
+  .logs { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); display: flex; gap: 3px; z-index: 2; }
+  .log { width:44px; height:14px; background:linear-gradient(180deg,#5c3010,#3d1e08); border-radius:7px; border:1px solid #2a1005; }
+  .log:nth-child(2) { transform:rotate(-15deg) translateY(3px); width:38px; }
+
+  /* The stone arch SVG sits on top of everything, masking the embers at the arch line */
+  .arch-svg {
+    position: relative; z-index: 3;
+    display: block; width: 260px;
+  }
+
+  /* Embers — contained inside firebox, clipped by arch */
+  .embers {
+    position: absolute;
+    bottom: 18px; left: 50%; transform: translateX(-50%);
+    width: 160px; height: 140px;
+    pointer-events: none; z-index: 2;
+    overflow: hidden; /* clips embers at the arch opening */
+    border-radius: 0 0 8px 8px;
+  }
+  .ember {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: #ffaa00; opacity: 0;
+    animation: floatember 2.4s ease-out infinite;
+  }
+  .ember:nth-child(1){left:55px;  bottom:10px; animation-delay:0s;   animation-duration:2.2s}
+  .ember:nth-child(2){left:80px;  bottom:10px; animation-delay:.5s;  animation-duration:2.6s}
+  .ember:nth-child(3){left:68px;  bottom:10px; animation-delay:1.0s; animation-duration:2.0s}
+  .ember:nth-child(4){left:90px;  bottom:10px; animation-delay:1.5s; animation-duration:2.8s}
+  .ember:nth-child(5){left:48px;  bottom:10px; animation-delay:.3s;  animation-duration:2.3s}
+  .ember:nth-child(6){left:100px; bottom:10px; animation-delay:1.8s; animation-duration:2.5s}
+  .ember:nth-child(7){left:72px;  bottom:10px; animation-delay:.8s;  animation-duration:2.1s}
+  .ember:nth-child(8){left:60px;  bottom:10px; animation-delay:2.0s; animation-duration:2.7s}
+  @keyframes floatember {
+    0%  {opacity:0;   transform:translateY(0)      translateX(0)    scale(1)}
+    15% {opacity:.95;}
+    70% {opacity:.6;}
+    100%{opacity:0;   transform:translateY(-120px) translateX(12px) scale(.25)}
+  }
+
+  /* Lamp */
+  .lamp { position: fixed; bottom: 90px; right: 40px; width: 60px; z-index: 1; }
+  .lamp-shade {
+    width:60px; height:40px;
+    background:linear-gradient(180deg,#c4894a,#e8a840 50%,#c4894a);
+    border-radius:4px 4px 20px 20px; border:2px solid #8b5e2a; position:relative; overflow:hidden;
+  }
+  .lamp-shade::after {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse 60% 80% at 50% 20%, rgba(255,240,180,.6) 0%, transparent 70%);
+    animation:lampflicker 3s ease-in-out infinite alternate;
+  }
+  @keyframes lampflicker { 0%,100%{opacity:1} 50%{opacity:.85} }
+  /* Upward cone of light — symmetric around lamp centre.
+     Lamp: right:40px, width:60px → lamp centre is right:70px from viewport right.
+     Element: 400px wide, centred on lamp → right: calc(70px - 200px) = negative,
+     so use right: -130px (centres the 400px element on the lamp centre at right:70px).
+     Base points: lamp shade is 60px, centred in 400px → 170px to 230px from left
+     = 42.5% to 57.5%. Top spreads symmetrically to full width (0% to 100%).
+     Left slope = -1 * right slope by construction. */
+  .lamp-glow {
+    position: fixed;
+    bottom: 210px;
+    right: -130px;
+    width: 400px;
+    height: 50vh;
+    clip-path: polygon(42.5% 100%, 57.5% 100%, 100% 0%, 0% 0%);
+    background: linear-gradient(
+      180deg,
+      transparent              0%,
+      rgba(255,210,100,.02)   25%,
+      rgba(255,200,80,.05)    50%,
+      rgba(255,190,70,.10)    72%,
+      rgba(255,180,60,.18)    88%,
+      rgba(255,170,50,.24)   100%
+    );
+    animation: lampflicker 3s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .lamp-pole { width:6px; height:70px; background:linear-gradient(90deg,#8b5e2a,#c4894a,#8b5e2a); margin:0 auto; border-radius:3px; }
+  .lamp-base { width:30px; height:10px; background:linear-gradient(180deg,#c4894a,#8b5e2a); border-radius:5px; border:2px solid #6b4418; margin:0 auto; }
+
+  /* Rug — behind all page content (z-index 0), sits on the floor, solid */
+  .rug {
+    position:fixed; bottom:6px; left:160px; right:120px; height:80px;
+    z-index: 0;
+    background: radial-gradient(ellipse 80% 100% at 50% 50%, #8b3030 0%, #6b2020 50%, #5a1818 100%);
+    border-radius:50%;
+  }
+  .rug::before { content:''; position:absolute; inset:8px; border-radius:50%; border:3px solid rgba(200,100,50,.4); }
+
+  /* embers now defined with fireplace above */
+
+  /* ── Mantel clock ── */
+  /* Inside .fireplace div. SVG mantel slab is y=8, height=22 in the 260x200 viewBox.
+     The clock sits above the slab. top value positions the bottom of the
+     clock's visual glyph flush with the mantel top surface.
+     Emoji have large invisible bounding boxes — use a tall container
+     with the emoji at the bottom, and nudge with negative bottom margin. */
+  .mantel-decor {
+    position: absolute;
+    top: -30px;
+    left: 0;
+    width: 260px;
+    height: 40px;
+    z-index: 4;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-left: calc(260px / 3 - 32px);
+  }
+
+  .mantel-item {
+    font-size: 49px;
+    line-height: 1;
+    filter: drop-shadow(0px 2px 4px rgba(0,0,0,.8));
+  }
+
+  /* Layout */
+  .wrapper { max-width: 960px; margin: 0 auto; padding: 28px 20px 130px; position: relative; z-index: 1; }
+
+  /* Header */
+  .header { text-align:center; margin-bottom:28px; }
+  /* Picture frame header.
+     Structure: .header-sign is the wood frame band.
+                .frame-inner is the parchment text area inside. */
+  .header-sign {
+    display: inline-block;
+    position: relative;
+    /* Frame band width = padding amount */
+    padding: 18px;
+    /* Wood grain texture fills the frame band */
+    background-color: #9a6820;
+    background-image: repeating-linear-gradient(
+      180deg,
+      rgba(255,180,80,.13)  0px, rgba(255,180,80,.13)  2px,
+      transparent            2px, transparent            7px,
+      rgba(0,0,0,.10)        7px, rgba(0,0,0,.10)        9px,
+      transparent            9px, transparent           16px,
+      rgba(255,160,60,.08)  16px, rgba(255,160,60,.08)  18px,
+      transparent           18px, transparent           28px,
+      rgba(0,0,0,.07)       28px, rgba(0,0,0,.07)       29px,
+      transparent           29px, transparent           38px
+    );
+    box-shadow: 0 10px 36px rgba(0,0,0,.65), 0 0 52px rgba(245,166,35,.14);
+  }
+
+  /* Gold + dark inner border rings around the parchment window */
+  .header-sign::before {
+    content: '';
+    position: absolute; inset: 0;
+    box-shadow:
+      inset 0 0 0 2px #c4894a,
+      inset 0 0 0 5px #1e1005,
+      inset 0 0 0 8px #b08030,
+      inset 0 0 0 12px #2a1808,
+      inset 0 0 0 15px #e8c070,
+      inset 0 0 0 18px #2a1808;
+    pointer-events: none;
+  }
+
+  /* The inner parchment text window */
+  .frame-inner {
+    background: linear-gradient(160deg, #f5e8c8 0%, #ede0b0 50%, #f0e4c0 100%);
+    padding: 28px 52px 22px;
+    position: relative;
+  }
+
+  /* Corner ornaments — four small squares at corners */
+  .header-sign::after {
+    content: '❧';
+    position: absolute;
+    bottom: 8px; left: 0; right: 0;
+    text-align: center;
+    font-size: 12px; color: #9a7040;
+    letter-spacing: 4px;
+    pointer-events: none;
+  }
+
+  .header-icon  { font-size:22px; margin-bottom:6px; }
+  .header-title {
+    font-family: 'Lora', serif; font-size: 28px; font-weight: 600;
+    color: #2a1808; letter-spacing: .06em;
+    text-shadow: 1px 1px 0 rgba(255,220,140,.6);
+  }
+  .header-sub {
+    font-size: 11px; color: #7a5828; font-weight: 600;
+    margin-top: 4px; letter-spacing: .12em; font-style: italic;
+  }
+
+  /* Corner flourish elements */
+  .frame-corner {
+    position: absolute; font-size: 18px; color: #9a6828; line-height: 1;
+    pointer-events: none;
+  }
+  .frame-corner.tl { top:  6px; left:  8px; transform: rotate(0deg); }
+  .frame-corner.tr { top:  6px; right: 8px; transform: rotate(90deg); }
+  .frame-corner.bl { bottom: 6px; left:  8px; transform: rotate(270deg); }
+  .frame-corner.br { bottom: 6px; right: 8px; transform: rotate(180deg); }
+
+  /* Info bar */
+  .info-bar { display:flex; justify-content:center; gap:12px; margin:40px 0 24px; flex-wrap:wrap; }
+  .info-pill {
+    background:rgba(30,15,5,.6); border:1.5px solid #8b5e2a; border-radius:20px;
+    padding:5px 14px; font-size:12px; font-weight:700; color:#f5e6c8;
+    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,180,80,.1);
+    display:flex; align-items:center; gap:5px; backdrop-filter:blur(4px);
+  }
+
+  /* Shelf */
+  .shelf-section { margin-bottom:28px; }
+  .shelf-label {
+    font-family:'Lora',serif; font-size:13px; font-weight:600; font-style:italic;
+    color:#c4a070; margin-bottom:8px;
+    display:flex; align-items:center; gap:10px; padding-left:4px;
+  }
+  .shelf-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,#8b5e2a,transparent); opacity:.4; }
+
+  .shelf-plank {
+    position: relative;
+    /* Base warm wood colour */
+    background: #a06830;
+    border: 2px solid #6b4418; border-radius: 6px;
+    box-shadow: 0 6px 0 #3d2510, 0 8px 20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,200,100,.3);
+    padding: 3px 12px 10px;
+    /* Horizontal wood grain: alternating light/dark bands running left to right */
+    background-image:
+      repeating-linear-gradient(
+        180deg,
+        rgba(255,180,80,.10)  0px,
+        rgba(255,180,80,.10)  2px,
+        transparent            2px,
+        transparent            7px,
+        rgba(0,0,0,.10)        7px,
+        rgba(0,0,0,.10)        9px,
+        transparent            9px,
+        transparent           16px,
+        rgba(255,160,60,.07)  16px,
+        rgba(255,160,60,.07)  18px,
+        transparent           18px,
+        transparent           26px,
+        rgba(0,0,0,.08)       26px,
+        rgba(0,0,0,.08)       27px,
+        transparent           27px,
+        transparent           36px
+      );
+  }
+  /* Top highlight — light catches the top edge of the plank */
+  .shelf-plank::before {
+    content: ''; position: absolute; inset: 0; border-radius: 5px;
+    background:
+      linear-gradient(180deg, rgba(255,210,120,.25) 0%, transparent 18%),
+      linear-gradient(180deg, transparent 82%, rgba(0,0,0,.2) 100%);
+    pointer-events: none;
+  }
+  /* Left/right bracket shadow */
+  .shelf-plank::after {
+    content: ''; position: absolute; inset: 0; border-radius: 5px;
+    background:
+      linear-gradient(90deg,  rgba(0,0,0,.22) 0%, transparent 7%),
+      linear-gradient(270deg, rgba(0,0,0,.22) 0%, transparent 7%);
+    pointer-events: none;
+  }
+  .shelf-items { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; padding:10px 4px 4px; position:relative; z-index:1; }
+
+  /* Tile */
+  .tile {
+    background:linear-gradient(180deg,#fdf3e3,#ede0c4);
+    border:2.5px solid #c4a070; border-radius:14px; padding:14px 10px 12px;
+    text-align:center; cursor:pointer;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;
+    box-shadow:0 3px 0 #9a7040, 0 5px 14px rgba(0,0,0,.35);
+    text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:7px;
+    position:relative; animation:tileIn .35s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .tile:hover { transform:translateY(-5px) scale(1.04) rotate(.5deg); box-shadow:0 8px 0 #9a7040, 0 14px 28px rgba(0,0,0,.5); }
+  .tile:active { transform:translateY(1px) scale(.97); box-shadow:0 1px 0 #9a7040; }
+  @keyframes tileIn { from{transform:scale(.75) translateY(12px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+
+  .tile-icon { width:48px; height:48px; border-radius:12px; border:2px solid #d4bc7a; background:#fdf3e3; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.8); }
+  .tile-name { font-size:11px; font-weight:800; color:#2e1f0e; line-height:1.2; word-break:break-word; }
+  .tile-desc { font-size:9px; font-weight:600; color:#9a7040; line-height:1.3; font-style:italic; font-family:'Lora',serif; }
+
+  .tile.c-green  { border-color:#7ab858; box-shadow:0 3px 0 #5a9838,0 5px 14px rgba(0,0,0,.35); }
+  .tile.c-blue   { border-color:#7098c0; box-shadow:0 3px 0 #507898,0 5px 14px rgba(0,0,0,.35); }
+  .tile.c-pink   { border-color:#d07898; box-shadow:0 3px 0 #a05878,0 5px 14px rgba(0,0,0,.35); }
+  .tile.c-amber  { border-color:#d09838; box-shadow:0 3px 0 #a07020,0 5px 14px rgba(0,0,0,.35); background:linear-gradient(180deg,#fdf3e3,#f5e0b0); }
+  .tile.c-purple { border-color:#9878c0; box-shadow:0 3px 0 #7858a0,0 5px 14px rgba(0,0,0,.35); }
+  .tile.c-red    { border-color:#c07060; box-shadow:0 3px 0 #905040,0 5px 14px rgba(0,0,0,.35); }
+  .tile.c-green:hover  { box-shadow:0 8px 0 #5a9838,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-blue:hover   { box-shadow:0 8px 0 #507898,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-pink:hover   { box-shadow:0 8px 0 #a05878,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-amber:hover  { box-shadow:0 8px 0 #a07020,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-purple:hover { box-shadow:0 8px 0 #7858a0,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-red:hover    { box-shadow:0 8px 0 #905040,0 14px 28px rgba(0,0,0,.5); }
+
+  /* Drag and drop */
+  /* Status dot on tile */
+  .status-dot {
+    position: absolute; top: 7px; left: 7px;
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.6);
+    z-index: 3;
+  }
+  .status-dot.up      { background: #5cb85c; box-shadow: 0 0 4px rgba(92,184,92,.7); }
+  .status-dot.down    { background: #e05050; box-shadow: 0 0 4px rgba(224,80,80,.7); }
+  .status-dot.pending { background: #c4a070; animation: blink-dot .8s ease-in-out infinite alternate; }
+  @keyframes blink-dot { 0%{opacity:1} 100%{opacity:.3} }
+
+  .tile[draggable=true] { cursor: grab; }
+  .tile[draggable=true]:active { cursor: grabbing; }
+  .tile.dragging {
+    opacity: .35;
+    transform: scale(.96);
+    box-shadow: none !important;
+  }
+  .tile.drag-over {
+    outline: 3px dashed #c4894a;
+    outline-offset: 3px;
+    transform: scale(1.04) !important;
+  }
+  .shelf-items.edit-mode-grid::before {
+    content: '↔ drag tiles to reorder';
+    display: block;
+    grid-column: 1/-1;
+    font-size: 10px; font-weight: 700;
+    color: #c4a070; font-style: italic;
+    font-family: 'Lora', serif;
+    text-align: right; padding-bottom: 4px; opacity: .7;
+  }
+
+  .tile-remove { position:absolute; top:5px; right:5px; width:18px; height:18px; border-radius:50%; background:rgba(192,64,64,.15); border:1.5px solid rgba(192,64,64,.4); color:#c04040; font-size:10px; font-weight:900; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; line-height:1; transition:all .12s; }
+  .edit-mode .tile-remove { display:flex; }
+  .tile-remove:hover { background:rgba(192,64,64,.25); transform:scale(1.2); }
+  .shelf-empty { text-align:center; padding:20px; font-size:12px; font-weight:700; color:#c4a070; font-style:italic; grid-column:1/-1; font-family:'Lora',serif; }
+
+  /* Add panel */
+  .add-card {
+    background:rgba(20,12,4,.75); border:2px solid #8b5e2a; border-radius:16px;
+    padding:20px; margin-bottom:20px;
+    box-shadow:0 4px 0 #1e0e04, 0 6px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,180,80,.08);
+    backdrop-filter:blur(8px);
+  }
+  .section-title { font-family:'Lora',serif; font-size:13px; font-weight:600; font-style:italic; color:#c4a070; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .section-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,#8b5e2a,transparent); opacity:.3; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  @media(max-width:500px){.form-grid{grid-template-columns:1fr}}
+  .form-group { display:flex; flex-direction:column; gap:4px; }
+  label { font-size:10px; font-weight:800; color:#c4a070; letter-spacing:.07em; text-transform:uppercase; }
+  input,select { background:rgba(10,6,2,.5); border:1.5px solid #8b5e2a; border-radius:8px; color:#fdf3e3; font-family:'Nunito',sans-serif; font-size:12px; font-weight:600; padding:8px 10px; outline:none; transition:border-color .15s,box-shadow .15s; width:100%; }
+  input:focus,select:focus { border-color:#f5a623; box-shadow:0 0 0 2px rgba(245,166,35,.2); }
+  input::placeholder { color:#9a7040; }
+
+  .colour-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .colour-pick { width:26px; height:26px; border-radius:50%; border:3px solid transparent; cursor:pointer; transition:transform .12s,border-color .12s; }
+  .colour-pick:hover { transform:scale(1.2); }
+  .colour-pick.selected { border-color:#fdf3e3; transform:scale(1.1); }
+  .cp-default{background:#9a7040} .cp-green{background:#7ab858} .cp-blue{background:#7098c0}
+  .cp-pink{background:#d07898} .cp-amber{background:#d09838} .cp-purple{background:#9878c0} .cp-red{background:#c07060}
+
+  .emoji-row { display:flex; gap:5px; flex-wrap:wrap; margin-top:4px; }
+  .emoji-pick { width:32px; height:32px; border-radius:8px; border:1.5px solid #8b5e2a; background:rgba(10,6,2,.4); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s; }
+  .emoji-pick:hover { border-color:#f5a623; transform:scale(1.1); }
+  .emoji-pick.selected { border-color:#f5a623; background:rgba(245,166,35,.15); }
+
+  .section-row { display:flex; gap:7px; flex-wrap:wrap; margin-top:4px; }
+  .section-chip { padding:4px 11px; border-radius:16px; border:1.5px solid #8b5e2a; background:rgba(10,6,2,.4); font-size:11px; font-weight:700; color:#c4a070; cursor:pointer; transition:all .12s; }
+  .section-chip:hover { border-color:#f5a623; color:#f5e6c8; }
+  .section-chip.selected { border-color:#f5a623; background:rgba(245,166,35,.12); color:#fdf3e3; }
+  .section-chip-new { padding:4px 10px; border-radius:16px; border:1.5px dashed #6b4418; background:transparent; font-size:11px; font-weight:700; color:#9a7040; cursor:pointer; transition:all .12s; }
+  .section-chip-new:hover { border-color:#f5a623; color:#c4a070; }
+  .new-section-row { display:none; gap:8px; align-items:center; margin-top:8px; }
+  .new-section-row.show { display:flex; }
+  .new-section-row input { flex:1; }
+  .btn-add-section { padding:7px 13px; border-radius:8px; font-family:'Nunito',sans-serif; font-size:11px; font-weight:800; border:1.5px solid #e8891a; background:rgba(245,166,35,.2); color:#f5a623; cursor:pointer; transition:all .12s; white-space:nowrap; }
+  .btn-add-section:hover { background:rgba(245,166,35,.3); }
+  .btn-add { width:100%; padding:11px; border-radius:12px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:900; border:2px solid #e8891a; background:linear-gradient(180deg,rgba(245,166,35,.3),rgba(200,120,20,.3)); color:#fdf3e3; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.4),0 0 16px rgba(245,166,35,.15); transition:all .12s; margin-top:14px; }
+  .btn-add:hover { background:linear-gradient(180deg,rgba(245,166,35,.4),rgba(200,120,20,.4)); transform:translateY(-1px); box-shadow:0 4px 0 rgba(0,0,0,.4),0 0 24px rgba(245,166,35,.2); }
+  .btn-add:active { transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.4); }
+  .btn-edit { background:rgba(245,166,35,.12); color:#f5a623; border:1.5px solid #8a4f0e; border-radius:16px; padding:5px 14px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; cursor:pointer; transition:all .12s; }
+  .btn-edit:hover { background:rgba(245,166,35,.2); }
+  .btn-edit.active { background:rgba(245,166,35,.22); border-color:#f5a623; }
+  /* New tile colour variants */
+  .tile.c-teal   { border-color:#70c0b0; box-shadow:0 3px 0 #509880,0 5px 14px rgba(0,0,0,.35); }
+  .tile.c-orange { border-color:#e09050; box-shadow:0 3px 0 #b06828,0 5px 14px rgba(0,0,0,.35); background:linear-gradient(180deg,#fdf3e3,#f5ddc0); }
+  .tile.c-slate  { border-color:#9098b0; box-shadow:0 3px 0 #687088,0 5px 14px rgba(0,0,0,.35); background:linear-gradient(180deg,#f0f2f8,#e0e4f0); }
+  .tile.c-teal:hover   { box-shadow:0 8px 0 #509880,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-orange:hover { box-shadow:0 8px 0 #b06828,0 14px 28px rgba(0,0,0,.5); }
+  .tile.c-slate:hover  { box-shadow:0 8px 0 #687088,0 14px 28px rgba(0,0,0,.5); }
+  .cp-teal   { background: #70c0b0; }
+  .cp-orange { background: #e09050; }
+  .cp-slate  { background: #9098b0; }
+
+  /* Shelf drag handle in edit mode */
+  .shelf-drag-handle {
+    cursor: grab; font-size: 12px; color: #c4a070;
+    margin-right: 8px; opacity: .7; user-select: none;
+    padding: 2px 4px; border-radius: 4px;
+    transition: opacity .12s;
+  }
+  .shelf-drag-handle:hover { opacity: 1; }
+  .shelf-section.shelf-dragging { opacity: .4; }
+  .shelf-section.shelf-drag-over {
+    outline: 2px dashed #c4894a;
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  /* Empty shelf drop zone */
+  .shelf-drop-zone {
+    grid-column: 1/-1;
+    border: 2.5px dashed rgba(196,137,74,.4);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: #c4a070;
+    font-size: 11px; font-weight: 700;
+    font-style: italic; font-family: 'Lora', serif;
+    transition: all .15s;
+    cursor: default;
+  }
+  .shelf-drop-zone.drag-over {
+    border-color: #c4894a;
+    background: rgba(196,137,74,.08);
+    color: #e8c070;
+  }
+
+  .section-del { font-size:10px; padding:3px 8px; border-radius:10px; border:1.5px solid rgba(192,64,64,.4); background:rgba(192,64,64,.1); color:#e07070; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:800; transition:all .12s; margin-left:6px; }
+  .section-del:hover { background:rgba(192,64,64,.2); }
+  .no-shelves { text-align:center; padding:40px; color:#c4a070; font-family:'Lora',serif; font-style:italic; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="room">
+  <div class="wall-bg"></div>
+  <div class="wall-trim"></div>
+  <div class="floor-bg"></div>
+</div>
+
+<div class="fireplace">
+  <!-- Fire box: flames, logs, embers sit here -->
+  <div class="firebox">
+    <div class="flames">
+      <div class="flame flame-e"></div>
+      <div class="flame flame-c"></div>
+      <div class="flame flame-a"></div>
+      <div class="flame flame-b"></div>
+      <div class="flame flame-d"></div>
+    </div>
+    <div class="logs"><div class="log"></div><div class="log"></div></div>
+  </div>
+  <!-- Embers inside firebox, clipped by overflow:hidden -->
+  <div class="embers">
+    <div class="ember"></div><div class="ember"></div><div class="ember"></div>
+    <div class="ember"></div><div class="ember"></div><div class="ember"></div>
+    <div class="ember"></div><div class="ember"></div>
+  </div>
+  <!-- Stone arch SVG overlaid on top — masks/covers the firebox edges -->
+  <svg class="arch-svg" viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Stone texture filter -->
+      <filter id="stone" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" result="noise"/>
+        <feColorMatrix type="saturate" values="0" in="noise" result="grey"/>
+        <feBlend in="SourceGraphic" in2="grey" mode="multiply" result="blend"/>
+        <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+      </filter>
+    </defs>
+
+    <!-- The arch opening — this is the hole we see fire through.
+         We draw the SURROUND (wall), not the hole, using an arch-shaped cutout. -->
+
+    <!-- Left pier stones -->
+    <rect x="0"   y="80"  width="42" height="20" rx="2" fill="#6b6050" filter="url(#stone)"/>
+    <rect x="0"   y="102" width="42" height="22" rx="2" fill="#5a5040" filter="url(#stone)"/>
+    <rect x="0"   y="126" width="42" height="20" rx="2" fill="#635848" filter="url(#stone)"/>
+    <rect x="0"   y="148" width="42" height="20" rx="2" fill="#5a5040" filter="url(#stone)"/>
+    <rect x="0"   y="170" width="42" height="30" rx="2" fill="#6b6050" filter="url(#stone)"/>
+    <!-- Left pier highlight edge -->
+    <rect x="40"  y="80"  width="3"  height="120" fill="rgba(255,200,100,.15)"/>
+
+    <!-- Right pier stones -->
+    <rect x="218" y="80"  width="42" height="20" rx="2" fill="#6b6050" filter="url(#stone)"/>
+    <rect x="218" y="102" width="42" height="22" rx="2" fill="#5a5040" filter="url(#stone)"/>
+    <rect x="218" y="126" width="42" height="20" rx="2" fill="#635848" filter="url(#stone)"/>
+    <rect x="218" y="148" width="42" height="20" rx="2" fill="#5a5040" filter="url(#stone)"/>
+    <rect x="218" y="170" width="42" height="30" rx="2" fill="#6b6050" filter="url(#stone)"/>
+    <!-- Right pier highlight edge -->
+    <rect x="217" y="80"  width="3"  height="120" fill="rgba(0,0,0,.25)"/>
+
+    <!-- Arch voussoirs (the wedge stones around the curve) -->
+    <!-- We draw a thick ring around the arch opening, then divide it into stone blocks -->
+    <!-- Arch ring background -->
+    <path d="M 42 168 L 42 95 Q 42 48 130 48 Q 218 48 218 95 L 218 168 Z"
+          fill="none" stroke="#5a5040" stroke-width="44"/>
+    <!-- Individual voussoir stones as rotated rects around the arch -->
+    <!-- We use a path mask approach: draw colored arch segments -->
+    <g fill="none" stroke-width="42" stroke-linecap="butt">
+      <!-- Left lower -->
+      <path d="M 42 168 L 42 130" stroke="#6b6050" filter="url(#stone)"/>
+      <path d="M 42 128 L 42 108" stroke="#5a5040" filter="url(#stone)"/>
+      <!-- Left curve bottom -->
+      <path d="M 42 106 Q 42 85 60 70"  stroke="#635848" stroke-width="42" fill="none" filter="url(#stone)"/>
+      <!-- Left curve top -->
+      <path d="M 61 69 Q 82 55 105 50"  stroke="#6b6050" stroke-width="42" fill="none" filter="url(#stone)"/>
+      <!-- Keystone — centre top, slightly lighter -->
+      <path d="M 107 49 Q 130 45 153 49" stroke="#7a7060" stroke-width="46" fill="none" filter="url(#stone)"/>
+      <!-- Right curve top -->
+      <path d="M 155 50 Q 178 55 199 69" stroke="#6b6050" stroke-width="42" fill="none" filter="url(#stone)"/>
+      <!-- Right curve bottom -->
+      <path d="M 200 70 Q 218 85 218 106" stroke="#635848" stroke-width="42" fill="none" filter="url(#stone)"/>
+      <!-- Right lower -->
+      <path d="M 218 108 L 218 128" stroke="#5a5040" filter="url(#stone)"/>
+      <path d="M 218 130 L 218 168" stroke="#6b6050" filter="url(#stone)"/>
+    </g>
+
+    <!-- Stone mortar lines (thin gaps between stones) -->
+    <g stroke="#2a2018" stroke-width="1.5" fill="none" opacity="0.7">
+      <line x1="0"   y1="100" x2="43"  y2="100"/>
+      <line x1="0"   y1="124" x2="43"  y2="124"/>
+      <line x1="0"   y1="147" x2="43"  y2="147"/>
+      <line x1="0"   y1="169" x2="43"  y2="169"/>
+      <line x1="217" y1="100" x2="260" y2="100"/>
+      <line x1="217" y1="124" x2="260" y2="124"/>
+      <line x1="217" y1="147" x2="260" y2="147"/>
+      <line x1="217" y1="169" x2="260" y2="169"/>
+    </g>
+
+    <!-- Keystone highlight — the special centre stone at the apex -->
+    <path d="M 108 27 Q 130 22 152 27 Q 155 49 130 52 Q 105 49 108 27 Z"
+          fill="#8a7860" filter="url(#stone)" stroke="#2a2018" stroke-width="1"/>
+    <!-- Keystone engraving -->
+    <path d="M 118 36 Q 130 32 142 36" stroke="#2a2018" stroke-width="1" fill="none" opacity="0.5"/>
+    <circle cx="130" cy="30" r="4" fill="#7a6850" stroke="#2a2018" stroke-width="1"/>
+
+    <!-- Inner arch edge highlight (warm light catching the inner curve) -->
+    <path d="M 63 168 L 63 100 Q 63 68 130 68 Q 197 68 197 100 L 197 168"
+          fill="none" stroke="rgba(255,180,80,.18)" stroke-width="2"/>
+
+    <!-- Mantel shelf — a thick stone slab across the top -->
+    <rect x="0" y="8" width="260" height="22" rx="3"
+          fill="#7a7060" filter="url(#stone)" stroke="#2a2018" stroke-width="1"/>
+    <!-- Mantel top highlight -->
+    <rect x="0" y="8" width="260" height="4" rx="2" fill="rgba(255,210,140,.2)"/>
+    <!-- Mantel front face shadow -->
+    <rect x="0" y="26" width="260" height="4" fill="rgba(0,0,0,.3)"/>
+
+    <!-- Hearth slab at bottom -->
+    <rect x="0" y="188" width="260" height="12" rx="2"
+          fill="#6b6050" filter="url(#stone)" stroke="#2a2018" stroke-width="1"/>
+    <rect x="0" y="188" width="260" height="2" fill="rgba(255,180,80,.15)"/>
+
+    <!-- Warm fire glow reflecting on inner arch stones -->
+    <path d="M 63 168 L 63 110 Q 63 72 130 72 Q 197 72 197 110 L 197 168 Z"
+          fill="url(#fireglow)" opacity="0.3"/>
+    <defs>
+      <radialGradient id="fireglow" cx="50%" cy="100%" r="60%">
+        <stop offset="0%"   stop-color="#ff8800" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#ff8800" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Mantel decor sits inside fireplace div, above SVG, below wrapper content -->
+  <div class="mantel-decor">
+    <div class="mantel-item clock">🕰️</div>
+  </div>
+</div>
+
+<div class="lamp">
+  <div class="lamp-glow"></div>
+  <div class="lamp-shade"></div>
+  <div class="lamp-pole"></div>
+  <div class="lamp-base"></div>
+</div>
+
+<div class="rug"></div>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="header-sign">
+      <span class="frame-corner tl">✦</span>
+      <span class="frame-corner tr">✦</span>
+      <span class="frame-corner bl">✦</span>
+      <span class="frame-corner br">✦</span>
+      <div class="frame-inner">
+        <div class="header-title">NookShelf</div>
+        <div class="header-sub">your services, all in one place</div>
+        <div class="header-icon" style="margin-top:8px">🍵</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-bar">
+    <div class="info-pill" id="clockPill">🕯️ --:--</div>
+    <div class="info-pill" id="serviceCount">📦 0 services</div>
+    <button class="btn-edit" id="editBtn" onclick="toggleEditMode()">✏️ Rearrange</button>
+    <button class="btn-edit" onclick="backupShelf()" title="Download shelf backup">💾 Backup</button>
+  </div>
+
+  <div id="shelfContainer"></div>
+
+  <div class="add-card">
+    <div class="section-title">✨ Place a new item on the shelf</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>🏷️ Name</label>
+        <input type="text" id="inputName" placeholder="e.g. Jellyfin">
+      </div>
+      <div class="form-group">
+        <label>📝 Description</label>
+        <input type="text" id="inputDesc" placeholder="e.g. Media server">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>🔗 URL</label>
+        <input type="text" id="inputUrl" placeholder="http://192.168.1.x:port">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>🗂️ Shelf</label>
+      <div class="section-row" id="sectionPicker"></div>
+      <div class="new-section-row" id="newSectionRow">
+        <input type="text" id="newSectionInput" placeholder="New shelf name...">
+        <button class="btn-add-section" onclick="addSection()">+ Add</button>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>🎨 Icon</label>
+        <div class="emoji-row" id="emojiPicker"></div>
+      </div>
+      <div class="form-group">
+        <label>🌈 Colour</label>
+        <div class="colour-row" id="colourPicker"></div>
+      </div>
+    </div>
+    <button class="btn-add" onclick="addService()">🍵 Place on Shelf</button>
+  </div>
+</div>
+
+<script>
+const API_BASE  = '';
+const EMOJIS    = ['🎬','🎵','📺','🎮','📡','🌐','📦','⬇️','📊','🔧','🏠','📷','📚','🗄️','⚡','🔒','🌿','⭐','🧸','🎨','🎭','🎙️','🖥️','💾','🔮','🗺️','🧩','📰','🎧'];
+const COLOURS   = ['default','green','blue','pink','amber','purple','red','teal','orange','slate'];
+
+let services   = [];
+let sections   = ['Media', 'Music', 'Tools'];
+let editMode   = false;
+let selEmoji   = EMOJIS[0];
+let selColour  = 'default';
+let selSection = null;
+
+buildEmojiPicker();
+buildColourPicker();
+startClock();
+loadData();
+
+function buildEmojiPicker() {
+  const row = document.getElementById('emojiPicker');
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-pick' + (e === selEmoji ? ' selected' : '');
+    btn.textContent = e;
+    btn.onclick = () => { selEmoji = e; document.querySelectorAll('.emoji-pick').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); };
+    row.appendChild(btn);
+  });
+}
+
+function buildColourPicker() {
+  const row = document.getElementById('colourPicker');
+  COLOURS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'colour-pick cp-' + c + (c === selColour ? ' selected' : '');
+    btn.title = c;
+    btn.onclick = () => { selColour = c; document.querySelectorAll('.colour-pick').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); };
+    row.appendChild(btn);
+  });
+}
+
+function startClock() {
+  const tick = () => { document.getElementById('clockPill').textContent = '🕯️ ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); };
+  tick(); setInterval(tick, 1000);
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('/api/data');
+    const data = await res.json();
+    services = data.services || [];
+    sections = data.sections || ['Media','Tools','Diagnostics'];
+    selSection = sections[0] || null;
+  } catch(e) { console.error('Failed to load:', e); }
+  renderAll(); buildSectionPicker();
+}
+
+async function saveData() {
+  try {
+    await fetch('/api/data', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({services,sections}) });
+  } catch(e) { console.error('Failed to save:', e); }
+}
+
+function renderAll() {
+  const container = document.getElementById('shelfContainer');
+  container.innerHTML = '';
+  if (!sections.length) {
+    container.innerHTML = '<div class="no-shelves">The shelves are bare... add one below.</div>';
+    document.getElementById('serviceCount').textContent = '📦 0 services';
+    return;
+  }
+  sections.forEach(sec => {
+    const items = services.filter(s => s.section === sec);
+    const section = document.createElement('div');
+    section.className = 'shelf-section';
+    section.dataset.section = sec;
+    if (editMode) {
+      section.draggable = true;
+      section.addEventListener('dragstart', onShelfDragStart);
+      section.addEventListener('dragend',   onShelfDragEnd);
+      section.addEventListener('dragover',  onShelfDragOver);
+      section.addEventListener('dragleave', onShelfDragLeave);
+      section.addEventListener('drop',      onShelfDrop);
+    }
+    const label = document.createElement('div');
+    label.className = 'shelf-label';
+    if (editMode) {
+      const handle = document.createElement('span');
+      handle.className = 'shelf-drag-handle';
+      handle.textContent = '⠿ ';
+      handle.title = 'Drag to reorder shelf';
+      label.appendChild(handle);
+    }
+    const nameNode = document.createTextNode(sec);
+    label.appendChild(nameNode);
+    if (editMode) {
+      const del = document.createElement('button');
+      del.className = 'section-del'; del.textContent = '✕ remove shelf';
+      del.onclick = () => removeSection(sec);
+      label.appendChild(del);
+    }
+    const plank = document.createElement('div');
+    plank.className = 'shelf-plank' + (editMode ? ' edit-mode' : '');
+    const grid = document.createElement('div');
+    grid.className = 'shelf-items' + (editMode ? ' edit-mode-grid' : '');
+    if (!items.length) {
+      // Empty shelf: show a drop zone so tiles can be dragged here
+      if (editMode) {
+        const zone = document.createElement('div');
+        zone.className = 'shelf-drop-zone';
+        zone.textContent = 'Drop a tile here';
+        zone.dataset.section = sec;
+        zone.addEventListener('dragover',  function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', function(e) { this.classList.remove('drag-over'); });
+        zone.addEventListener('drop',      function(e) {
+          e.preventDefault(); e.stopPropagation();
+          this.classList.remove('drag-over');
+          if (!dragId) return;
+          const idx = services.findIndex(s => s.id === dragId);
+          if (idx === -1) return;
+          services[idx].section = this.dataset.section;
+          saveData(); renderAll();
+        });
+        grid.appendChild(zone);
+      } else {
+        grid.innerHTML = '<div class="shelf-empty">Empty... place something here.</div>';
+      }
+    } else {
+      items.forEach((svc, i) => {
+        const a = document.createElement('a');
+        a.className = 'tile' + (svc.colour && svc.colour !== 'default' ? ' c-' + svc.colour : '');
+        a.href = editMode ? '#' : svc.url;
+        a.style.animationDelay = (i * 0.06) + 's';
+        a.dataset.id = svc.id;
+        if (!editMode) {
+          a.target = '_blank'; a.rel = 'noopener';
+        } else {
+          a.draggable = true;
+          a.addEventListener('dragstart', onDragStart);
+          a.addEventListener('dragend',   onDragEnd);
+          a.addEventListener('dragover',  onDragOver);
+          a.addEventListener('dragleave', onDragLeave);
+          a.addEventListener('drop',      onDrop);
+        }
+        a.innerHTML =
+          '<button class="tile-remove" data-id="' + svc.id + '">✕</button>' +
+          '<span class="status-dot pending" id="status-' + svc.id + '" title="Checking..."></span>' +
+          '<div class="tile-icon">' + svc.emoji + '</div>' +
+          '<div class="tile-name">' + svc.name + '</div>' +
+          (svc.desc ? '<div class="tile-desc">' + svc.desc + '</div>' : '');
+        a.querySelector('.tile-remove').addEventListener('click', function(e) {
+          e.preventDefault(); e.stopPropagation(); removeService(svc.id);
+        });
+        grid.appendChild(a);
+      });
+    }
+    plank.appendChild(grid); section.appendChild(label); section.appendChild(plank);
+    container.appendChild(section);
+  });
+  document.getElementById('serviceCount').textContent = '📦 ' + services.length + ' service' + (services.length !== 1 ? 's' : '');
+  // Kick off status checks after DOM is updated
+  scheduleStatusChecks();
+}
+
+function buildSectionPicker() {
+  const row = document.getElementById('sectionPicker');
+  row.innerHTML = '';
+  if (!selSection && sections.length) selSection = sections[0];
+  sections.forEach(sec => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'section-chip' + (sec === selSection ? ' selected' : '');
+    chip.textContent = sec;
+    chip.onclick = () => { selSection = sec; document.querySelectorAll('.section-chip').forEach(c => c.classList.remove('selected')); chip.classList.add('selected'); document.getElementById('newSectionRow').classList.remove('show'); };
+    row.appendChild(chip);
+  });
+  const newBtn = document.createElement('button');
+  newBtn.type = 'button'; newBtn.className = 'section-chip-new'; newBtn.textContent = '+ New shelf';
+  newBtn.onclick = () => { document.getElementById('newSectionRow').classList.toggle('show'); document.getElementById('newSectionInput').focus(); };
+  row.appendChild(newBtn);
+}
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('editBtn');
+  btn.textContent = editMode ? '✅ Done' : '✏️ Rearrange';
+  btn.classList.toggle('active', editMode);
+  renderAll();
+}
+
+function addService() {
+  const name = document.getElementById('inputName').value.trim();
+  const desc = document.getElementById('inputDesc').value.trim();
+  const rawUrl = document.getElementById('inputUrl').value.trim();
+  if (!name || !rawUrl) { alert('Please fill in at least a Name and URL!'); return; }
+  const url = rawUrl.match(/^https?:\/\//) ? rawUrl : 'http://' + rawUrl;
+  const sec = selSection || sections[0] || 'General';
+  services.push({ id: Date.now(), name, desc, url, emoji: selEmoji, colour: selColour, section: sec });
+  saveData(); renderAll();
+  ['inputName','inputDesc','inputUrl'].forEach(fid => document.getElementById(fid).value = '');
+}
+
+function removeService(id) {
+  if (!confirm('Remove this from the shelf?')) return;
+  services = services.filter(s => s.id !== id);
+  saveData(); renderAll();
+}
+
+function addSection() {
+  const name = document.getElementById('newSectionInput').value.trim();
+  if (!name || sections.includes(name)) return;
+  sections.push(name); selSection = name;
+  document.getElementById('newSectionInput').value = '';
+  document.getElementById('newSectionRow').classList.remove('show');
+  saveData(); buildSectionPicker(); renderAll();
+}
+
+function removeSection(sec) {
+  if (!confirm('Remove the "' + sec + '" shelf? Services on it will also be removed.')) return;
+  sections = sections.filter(s => s !== sec);
+  services = services.filter(s => s.section !== sec);
+  if (selSection === sec) selSection = sections[0] || null;
+  saveData(); buildSectionPicker(); renderAll();
+}
+
+// ── Status checks ────────────────────────────────────────────────────────────
+const STATUS_INTERVAL = 30000; // recheck every 30s
+let statusTimers = {};
+
+function startStatusChecks() {
+  services.forEach(svc => checkStatus(svc));
+}
+
+async function checkStatus(svc) {
+  const dot = document.getElementById('status-' + svc.id);
+  if (!dot) return;
+  try {
+    const res  = await fetch('/api/status?url=' + encodeURIComponent(svc.url));
+    const data = await res.json();
+    dot.className = 'status-dot ' + (data.up ? 'up' : 'down');
+    dot.title = data.up ? ('Up — ' + data.ms + 'ms') : 'Unreachable';
+  } catch(e) {
+    dot.className = 'status-dot down';
+    dot.title = 'Check failed';
+  }
+}
+
+function scheduleStatusChecks() {
+  Object.values(statusTimers).forEach(t => clearInterval(t));
+  statusTimers = {};
+  services.forEach(svc => {
+    checkStatus(svc);
+    statusTimers[svc.id] = setInterval(() => checkStatus(svc), STATUS_INTERVAL);
+  });
+}
+
+// ── Backup ────────────────────────────────────────────────────────────────────
+function backupShelf() {
+  const json    = JSON.stringify({ services, sections }, null, 2);
+  const blob    = new Blob([json], { type: 'application/json' });
+  const url     = URL.createObjectURL(blob);
+  const a       = document.createElement('a');
+  const date    = new Date().toISOString().slice(0, 10);
+  a.href        = url;
+  a.download    = 'nookshelf-backup-' + date + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Tile drag and drop ────────────────────────────────────────────────────────
+let dragId      = null;  // id of tile being dragged
+let shelfDragSec = null; // name of shelf being dragged
+
+// Tile handlers
+function onDragStart(e) {
+  dragId = parseInt(this.dataset.id);
+  shelfDragSec = null;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.stopPropagation(); // don't trigger shelf drag
+}
+
+function onDragEnd(e) {
+  dragId = null;
+  this.classList.remove('dragging');
+  document.querySelectorAll('.tile.drag-over').forEach(t => t.classList.remove('drag-over'));
+}
+
+function onDragOver(e) {
+  if (shelfDragSec) return; // shelf drag in progress — ignore tile events
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const targetId = parseInt(this.dataset.id);
+  if (targetId !== dragId) this.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  this.classList.remove('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  this.classList.remove('drag-over');
+  const targetId = parseInt(this.dataset.id);
+  if (!dragId || targetId === dragId) return;
+
+  const fromIdx = services.findIndex(s => s.id === dragId);
+  const toIdx   = services.findIndex(s => s.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+
+  // Move to target's shelf if different
+  services[fromIdx].section = services[toIdx].section;
+
+  const [moved] = services.splice(fromIdx, 1);
+  const newToIdx = services.findIndex(s => s.id === targetId);
+  services.splice(newToIdx, 0, moved);
+
+  saveData(); renderAll();
+}
+
+// ── Shelf drag and drop ───────────────────────────────────────────────────────
+function onShelfDragStart(e) {
+  // Only start shelf drag if the handle or label was grabbed, not a tile
+  if (e.target.closest('.tile')) return;
+  shelfDragSec = this.dataset.section;
+  dragId = null;
+  this.classList.add('shelf-dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onShelfDragEnd(e) {
+  shelfDragSec = null;
+  this.classList.remove('shelf-dragging');
+  document.querySelectorAll('.shelf-section.shelf-drag-over')
+    .forEach(s => s.classList.remove('shelf-drag-over'));
+}
+
+function onShelfDragOver(e) {
+  if (!shelfDragSec) return;
+  const targetSec = this.dataset.section;
+  if (targetSec === shelfDragSec) return;
+  e.preventDefault();
+  e.stopPropagation();
+  document.querySelectorAll('.shelf-section.shelf-drag-over')
+    .forEach(s => s.classList.remove('shelf-drag-over'));
+  this.classList.add('shelf-drag-over');
+}
+
+function onShelfDragLeave(e) {
+  // Only remove if leaving to outside the shelf section
+  if (!this.contains(e.relatedTarget)) {
+    this.classList.remove('shelf-drag-over');
+  }
+}
+
+function onShelfDrop(e) {
+  if (!shelfDragSec) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const targetSec = this.dataset.section;
+  if (!targetSec || targetSec === shelfDragSec) return;
+
+  document.querySelectorAll('.shelf-section.shelf-drag-over')
+    .forEach(s => s.classList.remove('shelf-drag-over'));
+
+  const fromIdx = sections.indexOf(shelfDragSec);
+  const toIdx   = sections.indexOf(targetSec);
+  if (fromIdx === -1 || toIdx === -1) return;
+
+  // Swap sections order
+  sections.splice(fromIdx, 1);
+  sections.splice(toIdx, 0, shelfDragSec);
+
+  saveData(); renderAll();
+}
+</script>
+</body>
+</html>
