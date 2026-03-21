@@ -468,6 +468,9 @@
   .tile-remove { position:absolute; top:5px; right:5px; width:18px; height:18px; border-radius:50%; background:rgba(192,64,64,.15); border:1.5px solid rgba(192,64,64,.4); color:#c04040; font-size:10px; font-weight:900; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; line-height:1; transition:all .12s; }
   .edit-mode .tile-remove { display:flex; }
   .tile-remove:hover { background:rgba(192,64,64,.25); transform:scale(1.2); }
+  .tile-edit { position:absolute; top:5px; left:5px; width:18px; height:18px; border-radius:50%; background:rgba(245,166,35,.15); border:1.5px solid rgba(245,166,35,.4); color:#f5a623; font-size:9px; font-weight:900; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; line-height:1; transition:all .12s; }
+  .edit-mode .tile-edit { display:flex; }
+  .tile-edit:hover { background:rgba(245,166,35,.28); transform:scale(1.2); }
   .shelf-empty { text-align:center; padding:20px; font-size:12px; font-weight:700; color:#c4a070; font-style:italic; grid-column:1/-1; font-family:'Lora',serif; }
 
   /* Add panel */
@@ -770,7 +773,48 @@
         <div class="colour-row" id="colourPicker"></div>
       </div>
     </div>
+    <div id="formError" style="display:none;color:#e07070;font-size:11px;font-weight:700;font-style:italic;margin-bottom:8px;font-family:'Lora',serif;"></div>
     <button class="btn-add" onclick="addService()">🍵 Place on Shelf</button>
+  </div>
+</div>
+
+<!-- ── Edit tile modal ── -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(160deg,#fdf3e3,#ede0c4);border:2.5px solid #c4a070;border-radius:16px;padding:24px 26px;max-width:420px;width:calc(100% - 32px);box-shadow:0 8px 0 #9a7040,0 12px 36px rgba(0,0,0,.6);">
+    <div style="font-family:'Lora',serif;font-size:14px;font-weight:600;color:#2e1f0e;margin-bottom:16px;font-style:italic;">✏️ Edit Item</div>
+    <div class="form-grid" style="background:transparent;">
+      <div class="form-group">
+        <label style="color:#7a5828;">🏷️ Name</label>
+        <input type="text" id="editName" placeholder="e.g. Jellyfin" style="background:rgba(255,240,200,.6);border-color:#c4a070;color:#2e1f0e;">
+      </div>
+      <div class="form-group">
+        <label style="color:#7a5828;">📝 Description</label>
+        <input type="text" id="editDesc" placeholder="e.g. Media server" style="background:rgba(255,240,200,.6);border-color:#c4a070;color:#2e1f0e;">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label style="color:#7a5828;">🔗 URL</label>
+        <input type="text" id="editUrl" placeholder="http://192.168.1.x:port" style="background:rgba(255,240,200,.6);border-color:#c4a070;color:#2e1f0e;">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label style="color:#7a5828;">🗂️ Shelf</label>
+      <div class="section-row" id="editSectionPicker" style="margin-top:4px;"></div>
+    </div>
+    <div class="form-grid" style="background:transparent;">
+      <div class="form-group">
+        <label style="color:#7a5828;">🎨 Icon</label>
+        <div class="emoji-row" id="editEmojiPicker"></div>
+      </div>
+      <div class="form-group">
+        <label style="color:#7a5828;">🌈 Colour</label>
+        <div class="colour-row" id="editColourPicker"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <div id="editFormError" style="display:none;color:#c04040;font-size:11px;font-weight:700;margin-bottom:8px;"></div>
+      <button class="btn-add" style="flex:1;margin-top:0;" onclick="saveEdit()">💾 Save Changes</button>
+      <button onclick="closeEditModal()" style="padding:10px 16px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;border:1.5px solid #c4a070;background:rgba(255,240,200,.4);color:#7a5828;cursor:pointer;">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -920,12 +964,16 @@ function renderAll() {
         }
         a.innerHTML =
           '<button class="tile-remove" data-id="' + svc.id + '">✕</button>' +
+          '<button class="tile-edit" data-id="' + svc.id + '">✏️</button>' +
           '<span class="status-dot pending" id="status-' + svc.id + '" title="Checking..."></span>' +
           '<div class="tile-icon">' + svc.emoji + '</div>' +
           '<div class="tile-name">' + svc.name + '</div>' +
           (svc.desc ? '<div class="tile-desc">' + svc.desc + '</div>' : '');
         a.querySelector('.tile-remove').addEventListener('click', function(e) {
           e.preventDefault(); e.stopPropagation(); removeService(svc.id);
+        });
+        a.querySelector('.tile-edit').addEventListener('click', function(e) {
+          e.preventDefault(); e.stopPropagation(); openEditModal(svc.id);
         });
         grid.appendChild(a);
       });
@@ -976,28 +1024,36 @@ function isPrivateUrl(raw) {
   return PRIVATE_IP_RE.test(raw.trim());
 }
 
+function showEditError(msg) {
+  const el = document.getElementById('editFormError');
+  if (el) { el.textContent = '⚠️ ' + msg; el.style.display = 'block'; }
+}
+
+function showFormError(msg) {
+  const el = document.getElementById('formError');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+
+function clearFormError() {
+  const el = document.getElementById('formError');
+  if (el) el.style.display = 'none';
+}
+
 function addService() {
   const name   = document.getElementById('inputName').value.trim();
   const desc   = document.getElementById('inputDesc').value.trim();
   const rawUrl = document.getElementById('inputUrl').value.trim();
 
   if (!name || !rawUrl) {
-    alert('Please fill in at least a Name and URL!');
+    showFormError('Please fill in at least a Name and URL!');
     return;
   }
-
   if (!isPrivateUrl(rawUrl)) {
-    alert(
-      'Only local/private IP addresses are allowed as links.\n\n' +
-      'Accepted ranges:\n' +
-      '  192.168.x.x\n' +
-      '  10.x.x.x\n' +
-      '  172.16–31.x.x\n' +
-      '  100.64–127.x.x  (Tailscale)\n\n' +
-      'Example: http://192.168.1.100:8096'
-    );
+    showFormError('Only private IPs allowed: 192.168.x.x, 10.x.x.x, 172.16-31.x.x, or 100.64-127.x.x (Tailscale)');
     return;
   }
+  clearFormError();
 
   const url = rawUrl.match(/^https?:\/\//) ? rawUrl : 'http://' + rawUrl;
   const sec = selSection || sections[0] || 'General';
@@ -1007,7 +1063,6 @@ function addService() {
 }
 
 function removeService(id) {
-  if (!confirm('Remove this from the shelf?')) return;
   services = services.filter(s => s.id !== id);
   saveData(); renderAll();
 }
@@ -1022,7 +1077,6 @@ function addSection() {
 }
 
 function removeSection(sec) {
-  if (!confirm('Remove the "' + sec + '" shelf? Services on it will also be removed.')) return;
   sections = sections.filter(s => s !== sec);
   services = services.filter(s => s.section !== sec);
   if (selSection === sec) selSection = sections[0] || null;
@@ -1059,6 +1113,106 @@ function scheduleStatusChecks() {
     statusTimers[svc.id] = setInterval(() => checkStatus(svc), STATUS_INTERVAL);
   });
 }
+
+// ── Edit modal ────────────────────────────────────────────────────────────────
+let editingId      = null;
+let editSelEmoji   = EMOJIS[0];
+let editSelColour  = 'default';
+let editSelSection = null;
+
+function openEditModal(id) {
+  const svc = services.find(s => s.id === id); if (!svc) return;
+  editingId      = id;
+  editSelEmoji   = svc.emoji   || EMOJIS[0];
+  editSelColour  = svc.colour  || 'default';
+  editSelSection = svc.section || sections[0];
+
+  document.getElementById('editName').value = svc.name || '';
+  document.getElementById('editDesc').value = svc.desc || '';
+  document.getElementById('editUrl').value  = svc.url  || '';
+
+  // Section picker
+  const secRow = document.getElementById('editSectionPicker');
+  secRow.innerHTML = '';
+  sections.forEach(sec => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'section-chip' + (sec === editSelSection ? ' selected' : '');
+    chip.textContent = sec;
+    chip.onclick = () => {
+      editSelSection = sec;
+      secRow.querySelectorAll('.section-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    };
+    secRow.appendChild(chip);
+  });
+
+  // Emoji picker
+  const emojiRow = document.getElementById('editEmojiPicker');
+  emojiRow.innerHTML = '';
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-pick' + (e === editSelEmoji ? ' selected' : '');
+    btn.textContent = e;
+    btn.onclick = () => {
+      editSelEmoji = e;
+      emojiRow.querySelectorAll('.emoji-pick').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    emojiRow.appendChild(btn);
+  });
+
+  // Colour picker
+  const colRow = document.getElementById('editColourPicker');
+  colRow.innerHTML = '';
+  COLOURS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'colour-pick cp-' + c + (c === editSelColour ? ' selected' : '');
+    btn.title = c;
+    btn.onclick = () => {
+      editSelColour = c;
+      colRow.querySelectorAll('.colour-pick').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    colRow.appendChild(btn);
+  });
+
+  const modal = document.getElementById('editModal');
+  modal.style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  editingId = null;
+}
+
+function saveEdit() {
+  const svc = services.find(s => s.id === editingId); if (!svc) return;
+  const name   = document.getElementById('editName').value.trim();
+  const rawUrl = document.getElementById('editUrl').value.trim();
+  if (!name || !rawUrl) { showEditError('Name and URL are required!'); return; }
+  if (!isPrivateUrl(rawUrl)) {
+    showEditError('Only private IPs allowed: 192.168.x.x, 10.x.x.x, 172.16-31.x.x, 100.64-127.x.x');
+    return;
+  }
+  svc.name    = name;
+  svc.desc    = document.getElementById('editDesc').value.trim();
+  svc.url     = rawUrl.match(/^https?:\/\//) ? rawUrl : 'http://' + rawUrl;
+  svc.section = editSelSection || sections[0];
+  svc.emoji   = editSelEmoji;
+  svc.colour  = editSelColour;
+  saveData(); renderAll();
+  closeEditModal();
+}
+
+// Close when clicking backdrop
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
+});
 
 // ── Backup ────────────────────────────────────────────────────────────────────
 function backupShelf() {
