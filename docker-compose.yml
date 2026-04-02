@@ -7,3 +7,5 @@ services:
     volumes:
       - ./data:/data        # nookshelf.json lives here
     restart: unless-stopped
+    networks:
+      - caddy-proxy
