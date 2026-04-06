@@ -1008,7 +1008,7 @@ function buildSectionPicker() {
 function toggleEditMode() {
   editMode = !editMode;
   const btn = document.getElementById('editBtn');
-  btn.textContent = editMode ? '✅ Done' : '✏️ Rearrange';
+  btn.textContent = editMode ? '✅ Done' : '✏️ Edit';
   btn.classList.toggle('active', editMode);
   renderAll();
 }
@@ -1069,12 +1069,23 @@ function removeService(id) {
 }
 
 function promptAddShelf() {
-  const name = prompt('New shelf name:');
-  if (!name || !name.trim()) return;
-  const trimmed = name.trim();
+  document.getElementById('addShelfInput').value = '';
+  const modal = document.getElementById('addShelfModal');
+  modal.style.display = 'flex';
+  document.getElementById('addShelfInput').focus();
+}
+
+function closeAddShelfModal() {
+  document.getElementById('addShelfModal').style.display = 'none';
+}
+
+function confirmAddShelf() {
+  const trimmed = document.getElementById('addShelfInput').value.trim();
+  if (!trimmed) return;
   if (sections.includes(trimmed)) { alert('A shelf with that name already exists!'); return; }
   sections.push(trimmed);
   selSection = trimmed;
+  closeAddShelfModal();
   saveData(); buildSectionPicker(); renderAll();
 }
 
@@ -1223,6 +1234,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('editModal').addEventListener('click', function(e) {
     if (e.target === this) closeEditModal();
   });
+  document.getElementById('addShelfInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') confirmAddShelf();
+  });
+  document.getElementById('addShelfModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddShelfModal();
+  });
 });
 
 // ── Backup ────────────────────────────────────────────────────────────────────
@@ -1346,5 +1363,17 @@ function onShelfDrop(e) {
   saveData(); renderAll();
 }
 </script>
+
+<div id="addShelfModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(160deg,#fdf3e3,#ede0c4);border:2.5px solid #c4a070;border-radius:16px;padding:24px 26px;max-width:340px;width:calc(100% - 32px);box-shadow:0 8px 0 #9a7040,0 12px 36px rgba(0,0,0,.6);">
+    <div style="font-family:'Lora',serif;font-size:14px;font-weight:600;color:#2e1f0e;margin-bottom:14px;font-style:italic;">🗂️ New Shelf</div>
+    <input id="addShelfInput" type="text" placeholder="Shelf name..." style="width:100%;background:rgba(255,240,200,.6);border:1.5px solid #c4a070;border-radius:8px;color:#2e1f0e;font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;padding:9px 11px;outline:none;margin-bottom:14px;">
+    <div style="display:flex;gap:10px;">
+      <button class="btn-add" style="flex:1;margin-top:0;" onclick="confirmAddShelf()">+ Add Shelf</button>
+      <button onclick="closeAddShelfModal()" style="padding:10px 16px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;border:1.5px solid #c4a070;background:rgba(255,240,200,.4);color:#7a5828;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
