@@ -733,7 +733,8 @@
   <div class="info-bar">
     <div class="info-pill" id="clockPill">🕯️ --:--</div>
     <div class="info-pill" id="serviceCount">📦 0 services</div>
-    <button class="btn-edit" id="editBtn" onclick="toggleEditMode()">✏️ Rearrange</button>
+    <button class="btn-edit" id="editBtn" onclick="toggleEditMode()">✏️ Edit</button>
+    <button class="btn-edit" onclick="promptAddShelf()">🗂️ Add Shelf</button>
     <button class="btn-edit" onclick="backupShelf()" title="Download shelf backup">💾 Backup</button>
   </div>
 
@@ -1065,6 +1066,16 @@ function addService() {
 function removeService(id) {
   services = services.filter(s => s.id !== id);
   saveData(); renderAll();
+}
+
+function promptAddShelf() {
+  const name = prompt('New shelf name:');
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  if (sections.includes(trimmed)) { alert('A shelf with that name already exists!'); return; }
+  sections.push(trimmed);
+  selSection = trimmed;
+  saveData(); buildSectionPicker(); renderAll();
 }
 
 function addSection() {
