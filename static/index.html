@@ -471,6 +471,8 @@
   .tile-edit { position:absolute; top:5px; left:5px; width:18px; height:18px; border-radius:50%; background:rgba(245,166,35,.15); border:1.5px solid rgba(245,166,35,.4); color:#f5a623; font-size:9px; font-weight:900; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; line-height:1; transition:all .12s; }
   .edit-mode .tile-edit { display:flex; }
   .tile-edit:hover { background:rgba(245,166,35,.28); transform:scale(1.2); }
+  .tile-copy { position:absolute; bottom:5px; right:5px; width:18px; height:18px; border-radius:50%; background:rgba(139,94,42,.15); border:1.5px solid rgba(139,94,42,.4); color:#c4a070; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; line-height:1; transition:all .12s; }
+  .tile-copy:hover { background:rgba(139,94,42,.28); transform:scale(1.2); }
   .shelf-empty { text-align:center; padding:20px; font-size:12px; font-weight:700; color:#c4a070; font-style:italic; grid-column:1/-1; font-family:'Lora',serif; }
 
   /* Add panel */
@@ -973,9 +975,10 @@ function renderAll() {
           a.addEventListener('dragleave', onDragLeave);
           a.addEventListener('drop',      onDrop);
         }
-        a.innerHTML =
+a.innerHTML =
           '<button class="tile-remove" data-id="' + svc.id + '">✕</button>' +
           '<button class="tile-edit" data-id="' + svc.id + '">✏️</button>' +
+          '<button class="tile-copy" data-url="' + svc.url + '" title="Copy URL">⧉</button>' +
           '<span class="status-dot pending" id="status-' + svc.id + '" title="Checking..."></span>' +
           '<div class="tile-icon">' + svc.emoji + '</div>' +
           '<div class="tile-name">' + svc.name + '</div>' +
@@ -985,6 +988,13 @@ function renderAll() {
         });
         a.querySelector('.tile-edit').addEventListener('click', function(e) {
           e.preventDefault(); e.stopPropagation(); openEditModal(svc.id);
+        });
+        a.querySelector('.tile-copy').addEventListener('click', function(e) {
+          e.preventDefault(); e.stopPropagation();
+          navigator.clipboard.writeText(this.dataset.url).then(() => {
+            this.textContent = '✓';
+            setTimeout(() => { this.textContent = '⧉'; }, 1200);
+          });
         });
         grid.appendChild(a);
       });
