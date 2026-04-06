@@ -143,9 +143,7 @@ PORT           = 5001          # change if 5001 is taken
 STATUS_TIMEOUT = 2             # seconds before a service is marked down
 ```
 
----
 
-NookShelf runs on port `5001`
 ---
 
 ## Tech stack
