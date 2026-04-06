@@ -1,7 +1,6 @@
 # 🍵 NookShelf
 
-A cosy, Animal Crossing-inspired service dashboard for your homelab.
-Replaces Heimdall with a warm fireplace, wooden shelves, and a picture-frame header.
+A cosy service dashboard for your homelab.
 Add tiles for all your self-hosted services, drag to rearrange, and see at a glance
 which ones are up.
 
@@ -146,18 +145,7 @@ STATUS_TIMEOUT = 2             # seconds before a service is marked down
 
 ---
 
-## Runs alongside Archipelago
-
-NookShelf runs on port `5001` and Archipelago on `5000` — they coexist happily
-on the same machine. A common setup is:
-
-- **DietPi / Raspberry Pi** — runs both containers
-- **Tailscale** — provides access from anywhere
-- **Archipelago** at `:5000` — wake/sleep/reboot your machines
-- **NookShelf** at `:5001` — launch your services
-
-You can even add NookShelf itself as a tile in NookShelf. 🍵
-
+NookShelf runs on port `5001`
 ---
 
 ## Tech stack
