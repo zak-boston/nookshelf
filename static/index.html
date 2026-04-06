@@ -767,7 +767,10 @@
     <div class="form-grid">
       <div class="form-group">
         <label>🎨 Icon</label>
-        <div class="emoji-row" id="emojiPicker"></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div class="emoji-row" id="emojiPicker"></div>
+          <button type="button" onclick="openEmojiModal('add')" style="padding:4px 10px;border-radius:8px;border:1.5px dashed #8b5e2a;background:rgba(10,6,2,.4);font-size:11px;font-weight:700;color:#c4a070;cursor:pointer;font-family:'Nunito',sans-serif;">more…</button>
+        </div>
       </div>
       <div class="form-group">
         <label>🌈 Colour</label>
@@ -804,7 +807,10 @@
     <div class="form-grid" style="background:transparent;">
       <div class="form-group">
         <label style="color:#7a5828;">🎨 Icon</label>
-        <div class="emoji-row" id="editEmojiPicker"></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div class="emoji-row" id="editEmojiPicker"></div>
+          <button type="button" onclick="openEmojiModal('edit')" style="padding:4px 10px;border-radius:8px;border:1.5px dashed #8b5e2a;background:rgba(10,6,2,.4);font-size:11px;font-weight:700;color:#c4a070;cursor:pointer;font-family:'Nunito',sans-serif;">more…</button>
+        </div>
       </div>
       <div class="form-group">
         <label style="color:#7a5828;">🌈 Colour</label>
@@ -821,7 +827,7 @@
 
 <script>
 const API_BASE  = '';
-const EMOJIS    = ['🎬','🎵','📺','🎮','📡','🌐','📦','⬇️','📊','🔧','🏠','📷','📚','🗄️','⚡','🔒','🌿','⭐','🧸','🎨','🎭','🎙️','🖥️','💾','🔮','🗺️','🧩','📰','🎧'];
+const EMOJIS    = ['🎬','🎵','🎧','📺','💾','🌐','📦','📊','🔧','⭐'];
 const COLOURS   = ['default','green','blue','pink','amber','purple','red','teal','orange','slate'];
 
 let services   = [];
@@ -1105,6 +1111,62 @@ function removeSection(sec) {
   saveData(); buildSectionPicker(); renderAll();
 }
 
+// ── Emoji picker modal ─────────────────────────────────────────────────────
+
+const EMOJI_CATEGORIES = [
+  { label: '⭐ Favourites',  emojis: ['⭐','🔥','💎','🏆','🎯','✨','💡','🔑'] },
+  { label: '🎬 Media',       emojis: ['🎬','📺','🎵','🎧','🎙️','📻','🎮','🕹️','📷','📸','📽️','🎞️','🎭','🎨'] },
+  { label: '💻 Tech',        emojis: ['🖥️','💻','📱','⌨️','🖱️','🖨️','💾','💿','📡','🔌','🔋','📶','🛜','🧮','⚙️','🔧','🔩','🛠️'] },
+  { label: '🏠 Home',        emojis: ['🏠','🏡','🛋️','🪑','🛏️','🚪','🪟','💡','🔦','🕯️','🧹','🪣','🧺','🪴'] },
+  { label: '📦 Files',       emojis: ['📦','📁','📂','🗂️','📄','📃','📋','📊','📈','📉','🗄️','🗃️','📰','📚','📖','📝','✏️','🖊️'] },
+  { label: '🌿 Nature',      emojis: ['🌿','🌱','🌳','🌲','🍀','🌸','🌺','🌻','🌙','☀️','⭐','🌈','❄️','🔥','💧','🌊','⛅','🌍'] },
+  { label: '🍵 Food',        emojis: ['🍵','☕','🧋','🍺','🍕','🍔','🍜','🍣','🧁','🍪','🍎','🍋','🥝','🥑','🧀','🥐'] },
+  { label: '🔒 Security',    emojis: ['🔒','🔓','🔐','🛡️','🔑','🗝️','👁️','⚠️','🚨','🚦'] },
+  { label: '🚀 Network',     emojis: ['🚀','🛰️','📡','🌐','🔗','⛓️','🗺️','🧭','📍','🏴'] },
+  { label: '🧸 Fun',         emojis: ['🧸','🎲','🧩','🎪','🎠','🪆','🎁','🎀','🪄','🎩','🃏','🎴','🀄','♟️'] },
+];
+
+let emojiModalCaller = 'add';
+
+function openEmojiModal(caller) {
+  emojiModalCaller = caller;
+  const body = document.getElementById('emojiModalBody');
+  body.innerHTML = '';
+  EMOJI_CATEGORIES.forEach(cat => {
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-family:"Lora",serif;font-size:11px;font-weight:600;font-style:italic;color:#9a7040;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(139,94,42,.3);';
+    heading.textContent = cat.label;
+    body.appendChild(heading);
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;';
+    cat.emojis.forEach(e => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'emoji-pick';
+      btn.textContent = e;
+      btn.onclick = () => selectEmojiFromModal(e);
+      grid.appendChild(btn);
+    });
+    body.appendChild(grid);
+  });
+  document.getElementById('emojiModal').style.display = 'flex';
+}
+
+function closeEmojiModal() {
+  document.getElementById('emojiModal').style.display = 'none';
+}
+
+function selectEmojiFromModal(e) {
+  if (emojiModalCaller === 'edit') {
+    editSelEmoji = e;
+    document.querySelectorAll('#editEmojiPicker .emoji-pick').forEach(b => b.classList.remove('selected'));
+  } else {
+    selEmoji = e;
+    document.querySelectorAll('#emojiPicker .emoji-pick').forEach(b => b.classList.remove('selected'));
+  }
+  closeEmojiModal();
+}
+
 // ── Status checks ────────────────────────────────────────────────────────────
 const STATUS_INTERVAL = 30000; // recheck every 30s
 let statusTimers = {};
@@ -1240,6 +1302,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('addShelfModal').addEventListener('click', function(e) {
     if (e.target === this) closeAddShelfModal();
   });
+  document.getElementById('emojiModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEmojiModal();
+  });
 });
 
 // ── Backup ────────────────────────────────────────────────────────────────────
@@ -1374,6 +1439,14 @@ function onShelfDrop(e) {
     </div>
   </div>
 </div>
-
+<div id="emojiModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(160deg,#fdf3e3,#ede0c4);border:2.5px solid #c4a070;border-radius:16px;padding:24px 26px;max-width:480px;width:calc(100% - 32px);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 0 #9a7040,0 12px 36px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-family:'Lora',serif;font-size:14px;font-weight:600;color:#2e1f0e;font-style:italic;">🎨 Choose an Icon</div>
+      <button onclick="closeEmojiModal()" style="padding:4px 10px;border-radius:10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;border:1.5px solid #c4a070;background:rgba(255,240,200,.4);color:#7a5828;cursor:pointer;">✕ Close</button>
+    </div>
+    <div id="emojiModalBody" style="overflow-y:auto;flex:1;padding-right:4px;"></div>
+  </div>
+</div>
 </body>
 </html>
