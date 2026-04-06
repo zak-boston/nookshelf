@@ -736,6 +736,7 @@
     <button class="btn-edit" id="editBtn" onclick="toggleEditMode()">✏️ Edit</button>
     <button class="btn-edit" onclick="promptAddShelf()">🗂️ Add Shelf</button>
     <button class="btn-edit" onclick="backupShelf()" title="Download shelf backup">💾 Backup</button>
+    <button class="btn-edit" onclick="openRestoreModal()" title="Restore from backup">📂 Restore</button>
   </div>
 
   <div id="shelfContainer"></div>
@@ -1024,8 +1025,9 @@ function toggleEditMode() {
 //   10.x.x.x      — private class A
 //   172.16-31.x.x — private class B
 //   100.64-127.x.x — Tailscale (CGNAT range)
+//   localhost or *.local/*.home mDNS names
 // Optional http:// or https:// prefix, optional :port suffix.
-const PRIVATE_IP_RE = /^(https?:\/\/)?(192\.168\.[0-9]{1,3}\.[0-9]{1,3}|10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3})(:[0-9]{1,5})?(\/.*)? *$/;
+const PRIVATE_IP_RE = /^(https?:\/\/)?(192\.168\.[0-9]{1,3}\.[0-9]{1,3}|10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}|localhost|[a-zA-Z0-9-]+\.(local|home))(:[0-9]{1,5})?(\/.*)? *$/;
 
 function isPrivateUrl(raw) {
   return PRIVATE_IP_RE.test(raw.trim());
@@ -1057,7 +1059,7 @@ function addService() {
     return;
   }
   if (!isPrivateUrl(rawUrl)) {
-    showFormError('Only private IPs allowed: 192.168.x.x, 10.x.x.x, 172.16-31.x.x, or 100.64-127.x.x (Tailscale)');
+    showFormError('Only private addresses allowed: 192.168.x.x, 10.x.x.x, localhost, hostname.local, or hostname.home');
     return;
   }
   clearFormError();
@@ -1278,7 +1280,7 @@ function saveEdit() {
   const rawUrl = document.getElementById('editUrl').value.trim();
   if (!name || !rawUrl) { showEditError('Name and URL are required!'); return; }
   if (!isPrivateUrl(rawUrl)) {
-    showEditError('Only private IPs allowed: 192.168.x.x, 10.x.x.x, 172.16-31.x.x, 100.64-127.x.x');
+    showEditError('Only private addresses allowed: 192.168.x.x, 10.x.x.x, localhost, hostname.local, or hostname.home');
     return;
   }
   svc.name    = name;
@@ -1305,9 +1307,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('emojiModal').addEventListener('click', function(e) {
     if (e.target === this) closeEmojiModal();
   });
+  document.getElementById('restoreModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRestoreModal();
+  });
 });
 
-// ── Backup ────────────────────────────────────────────────────────────────────
+// ── Backup and restore ─────────────────────────────────────────────────────────────
 function backupShelf() {
   const json    = JSON.stringify({ services, sections }, null, 2);
   const blob    = new Blob([json], { type: 'application/json' });
@@ -1318,6 +1323,46 @@ function backupShelf() {
   a.download    = 'nookshelf-backup-' + date + '.json';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function openRestoreModal() {
+  document.getElementById('restoreFileInput').value = '';
+  document.getElementById('restoreError').style.display = 'none';
+  document.getElementById('restoreModal').style.display = 'flex';
+}
+
+function closeRestoreModal() {
+  document.getElementById('restoreModal').style.display = 'none';
+}
+
+function confirmRestore() {
+  const file = document.getElementById('restoreFileInput').files[0];
+  const errEl = document.getElementById('restoreError');
+  if (!file) {
+    errEl.textContent = '⚠️ Please choose a backup file first.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.services) || !Array.isArray(data.sections)) {
+        throw new Error('Invalid format');
+      }
+      services = data.services;
+      sections = data.sections;
+      selSection = sections[0] || null;
+      saveData();
+      buildSectionPicker();
+      renderAll();
+      closeRestoreModal();
+    } catch(err) {
+      errEl.textContent = '⚠️ That file doesn\'t look like a valid NookShelf backup.';
+      errEl.style.display = 'block';
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ── Tile drag and drop ────────────────────────────────────────────────────────
@@ -1436,6 +1481,18 @@ function onShelfDrop(e) {
     <div style="display:flex;gap:10px;">
       <button class="btn-add" style="flex:1;margin-top:0;" onclick="confirmAddShelf()">+ Add Shelf</button>
       <button onclick="closeAddShelfModal()" style="padding:10px 16px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;border:1.5px solid #c4a070;background:rgba(255,240,200,.4);color:#7a5828;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+<div id="restoreModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(160deg,#fdf3e3,#ede0c4);border:2.5px solid #c4a070;border-radius:16px;padding:24px 26px;max-width:380px;width:calc(100% - 32px);box-shadow:0 8px 0 #9a7040,0 12px 36px rgba(0,0,0,.6);">
+    <div style="font-family:'Lora',serif;font-size:14px;font-weight:600;color:#2e1f0e;margin-bottom:10px;font-style:italic;">📂 Restore from Backup</div>
+    <div style="font-family:'Lora',serif;font-size:12px;color:#7a5828;margin-bottom:16px;font-style:italic;">This will replace all your current shelves and services with the contents of the backup file.</div>
+    <input type="file" id="restoreFileInput" accept=".json" style="width:100%;background:rgba(255,240,200,.6);border:1.5px solid #c4a070;border-radius:8px;color:#2e1f0e;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:9px 11px;outline:none;margin-bottom:14px;cursor:pointer;">
+    <div id="restoreError" style="display:none;color:#c04040;font-size:11px;font-weight:700;font-style:italic;font-family:'Lora',serif;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-add" style="flex:1;margin-top:0;" onclick="confirmRestore()">📂 Restore</button>
+      <button onclick="closeRestoreModal()" style="padding:10px 16px;border-radius:12px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;border:1.5px solid #c4a070;background:rgba(255,240,200,.4);color:#7a5828;cursor:pointer;">Cancel</button>
     </div>
   </div>
 </div>
