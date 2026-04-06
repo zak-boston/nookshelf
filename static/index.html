@@ -733,6 +733,9 @@
   <div class="info-bar">
     <div class="info-pill" id="clockPill">🕯️ --:--</div>
     <div class="info-pill" id="serviceCount">📦 0 services</div>
+    <div class="info-pill" style="padding:3px 6px;">
+      <input id="searchInput" type="text" placeholder="🔍 search..." onkeyup="filterServices()" style="background:transparent;border:none;color:#f5e6c8;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;outline:none;width:120px;">
+    </div>
     <button class="btn-edit" id="editBtn" onclick="toggleEditMode()">✏️ Edit</button>
     <button class="btn-edit" onclick="promptAddShelf()">🗂️ Add Shelf</button>
     <button class="btn-edit" onclick="backupShelf()" title="Download shelf backup">💾 Backup</button>
@@ -1018,6 +1021,21 @@ function toggleEditMode() {
   btn.textContent = editMode ? '✅ Done' : '✏️ Edit';
   btn.classList.toggle('active', editMode);
   renderAll();
+}
+
+function filterServices() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  document.querySelectorAll('.shelf-section').forEach(section => {
+    let anyVisible = false;
+    section.querySelectorAll('.tile').forEach(tile => {
+      const name = (tile.querySelector('.tile-name')?.textContent || '').toLowerCase();
+      const desc = (tile.querySelector('.tile-desc')?.textContent || '').toLowerCase();
+      const match = !query || name.includes(query) || desc.includes(query);
+      tile.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    section.style.display = anyVisible || !query ? '' : 'none';
+  });
 }
 
 // Private IP ranges allowed as link targets:
