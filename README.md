@@ -1,10 +1,6 @@
 # 🍵 NookShelf
 
-A cosy service dashboard for your homelab.
-Add tiles for all your self-hosted services, drag to rearrange, and see at a glance
-which ones are up.
-
-![NookShelf screenshot — warm dark room with stone fireplace, wooden shelves, and service tiles]
+A service dashboard for your homelab.
 
 ---
 
@@ -12,12 +8,12 @@ which ones are up.
 
 ```
 nookshelf/
-├── app.py              ← Python/Flask backend
+├── app.py
 ├── Dockerfile
 ├── docker-compose.yml
 ├── README.md
 └── static/
-    └── index.html      ← The UI (single file, no build step)
+    └── index.html
 ```
 
 ---
