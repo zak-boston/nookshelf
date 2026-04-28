@@ -3,6 +3,9 @@
 A service dashboard for your homelab.
  
 ---
+<img width="1886" height="1086" alt="image" src="https://github.com/user-attachments/assets/be6ad4b8-d7a6-4873-bf74-dc6e8fe42caa" />
+
+---
  
 ## Folder structure
  
